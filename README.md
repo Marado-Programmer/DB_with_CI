@@ -1,113 +1,82 @@
-<?php
+[comment]: <> "LTeX: language=pt-pt"
 
-/**
- * This file is part of CodeIgniter 4 framework.
- *
- * (c) CodeIgniter Foundation <admin@codeigniter.com>
- *
- * For the full copyright and license information, please view
- * the LICENSE file that was distributed with this source code.
- */
+# Criar uma aplicação CodeIgniter
 
-/*
- *---------------------------------------------------------------
- * Sample file for Preloading
- *---------------------------------------------------------------
- * See https://www.php.net/manual/en/opcache.preloading.php
- *
- * How to Use:
- *   0. Copy this file to your project root folder.
- *   1. Set the $paths property of the preload class below.
- *   2. Set opcache.preload in php.ini.
- *     php.ini:
- *     opcache.preload=/path/to/preload.php
- */
+Vamos usar o [composer](https://getcomposer.org/) para isto seguindo os passos presentes na [documentação do CI](https://codeigniter.com/user_guide/installation/installing_composer.html).
+É uma tarefa fácil:
 
-// Load the paths config file
-require __DIR__ . '/app/Config/Paths.php';
+``` sh
+composer create-project codeigniter4/appstarter cidb-example
+cd ./cidb-example
+```
 
-// Path to the front controller
-define('FCPATH', __DIR__ . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR);
+Estou a usar a versão 4.3.3 do CI.
 
-/**
- * See https://www.php.net/manual/en/function.str-contains.php#126277
- */
-if (! function_exists('str_contains')) {
-    /**
-     * Polyfill of str_contains()
-     */
-    function str_contains(string $haystack, string $needle): bool
-    {
-        return empty($needle) || strpos($haystack, $needle) !== false;
-    }
-}
+## O que é o Composer?
 
-class preload
+O composer é um gerenciador de pacotes/dependências de bibliotecas PHP.
+É o que o npm é para o JavaScript.
+
+# Preparar a aplicação
+
+## $baseURL
+
+Editei a variável `$baseURL` no ficheiro [app/Config/App.php](./app/Config/App.php):
+
+``` php
+class App extends BaseConfig
 {
     /**
-     * @var array Paths to preload.
+     * --------------------------------------------------------------------------
+     * Base Site URL
+     * --------------------------------------------------------------------------
+     *
+     * URL to your CodeIgniter root. Typically, this will be your base URL,
+     * WITH a trailing slash:
+     *
+     *    http://example.com/
      */
-    private array $paths = [
-        [
-            'include' => __DIR__ . '/vendor/codeigniter4/framework/system',
-            'exclude' => [
-                // Not needed if you don't use them.
-                '/system/Database/OCI8/',
-                '/system/Database/Postgre/',
-                '/system/Database/SQLSRV/',
-                // Not needed.
-                '/system/Database/Seeder.php',
-                '/system/Test/',
-                '/system/Language/',
-                '/system/CLI/',
-                '/system/Commands/',
-                '/system/Publisher/',
-                '/system/ComposerScripts.php',
-                '/Views/',
-                // Errors occur.
-                '/system/Config/Routes.php',
-                '/system/ThirdParty/',
-            ],
-        ],
-    ];
+    public string $baseURL = "http://$_SERVER[SERVER_NAME]/";
 
-    public function __construct()
-    {
-        $this->loadAutoloader();
-    }
-
-    private function loadAutoloader()
-    {
-        $paths = new Config\Paths();
-        require rtrim($paths->systemDirectory, '\\/ ') . DIRECTORY_SEPARATOR . 'bootstrap.php';
-    }
-
-    /**
-     * Load PHP files.
-     */
-    public function load()
-    {
-        foreach ($this->paths as $path) {
-            $directory = new RecursiveDirectoryIterator($path['include']);
-            $fullTree  = new RecursiveIteratorIterator($directory);
-            $phpFiles  = new RegexIterator(
-                $fullTree,
-                '/.+((?<!Test)+\.php$)/i',
-                RecursiveRegexIterator::GET_MATCH
-            );
-
-            foreach ($phpFiles as $key => $file) {
-                foreach ($path['exclude'] as $exclude) {
-                    if (str_contains($file[0], $exclude)) {
-                        continue 2;
-                    }
-                }
-
-                require_once $file[0];
-                echo 'Loaded: ' . $file[0] . "\n";
-            }
-        }
-    }
+    // ...
 }
+```
 
-(new preload())->load();
+## Configuração para base de dados
+
+No ficheiro [app/Config/Database.php](./app/Config/Database.php) é onde vamos
+definir as diferentes conexões a bases de dados.
+
+Se abrirem o ficheiro vão encontrar a classe `Database`.
+
+A propriedade `$defaultGroup` é uma string para especificar a propriedade que
+define a conexão para usar como padrão.
+
+Depois existem duas propriedades, `$default` e `$tests`, que são exemplos de
+configuração a bases de dados, a primeira uma base de dados de base MySQL e a
+outra SQLite. Identifico isto facilmente pelo driver especificado.
+
+Aqui vocês têm que saber com que base de dados é que vão querer trabalhar
+obviamente (e dentro dos drivers suportados pelo
+[PDO](https://www.php.net/manual/en/pdo.drivers.php), e a tua versão do
+[CI](https://codeigniter.com/user_guide/intro/requirements.html#requirements-supported-databases))
+
+Usem o array `$default` como base para o que tenham que preencher:
+* `'hostname'` - domínio da base de dados;
+* `'username'` - username do user que será usado para a conexão;
+* `'password'` - password do user acima especificado;
+* `'database'` - A base de dados a que se querem conectar;
+* `'DBDriver'` - O driver correspondente à DB que vão usar (`MySQLi`, `OCI8`,
+  `Postgre`, `SQLSRV`, `SQLite3`);
+* `'DBPrefix'` - Pode ser útil ao fazer conexções à mesma DB. Quando o CI
+  estiver a criar a SQL query, este prefixo será anexado ao nome da tabela;
+* `'pConnect'` - Se quiserem que a conexão à DB seja;
+  [persistente](https://www.php.net/manual/en/features.persistent-connections.php);
+* `'DBDebug'` - Se queres que `\Exceptions` sejam `throw`ned caso algum erro aconteça;
+* `'encrypt'` - Para usar uma conexão encriptada;
+* `'port'` - A porta para usar na conexão à base de dados;
+
+Estes não são todas as opções, mas talvez sejam as mais importantes.
+As opções estão melhor explicadas [aqui](https://codeigniter.com/user_guide/database/configuration.html#explanation-of-values).
+
+Outra forma de conectar que talvez dê jeito de usar é a opção `'DSN'` onde tu podes especificar o `$dsn` que tu passarias no `\PDO::__constructor`.
