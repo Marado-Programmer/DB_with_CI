@@ -232,16 +232,80 @@ $pQuery = $db->prepare(static function ($db) {
 $pQuery->execute(...[$query, $params, $go, $on]);
 ```
 
+### `BaseConnection::insertedID()`
+
+Retorna o valor do `\PDO::lastInsertedId`
+
+### `BaseConnection::countAll()`
+
+Retorna o número de rows numa tabela
+
+```php
+<?php
+
+echo $db->table('my_table')->countAll();
+```
+
+### `BaseConnection::countAllResults()`
+
+Retorna o número de rows numa tabela mas filtrando.
+
+```php
+<?php
+
+echo $db->table('my_table')->like('title', 'match')->countAllResults();
+```
+
 # Class `\CodeIgniter\Database\Query`
 
 ## Métodos
 
 ### `Query::getResult()`
 
-Retorna um array com os resultados da query com typeof object
+Retorna um array com os resultados da query como \stdClass
 
 ### `Query::getRow()`
 
-Retorna uma única row typeof object
+Retorna uma única row como \stdClass
 
 ### `Query::getFieldNames()`
+
+Retorna um array com os fields que são esperados nas rows
+
+### `Query::getFieldNames()`
+
+Retorna o número total de rows
+
+### `Query::dataSeek()`
+
+Move o ponteiro do número da row para +x dependendo do valor do primeiro
+parâmetro
+
+# Builder
+
+O padrão de desenho Builder descreve uma forma de construir algo ao poucos. O
+CI usa este padrão de desenho para deixar-te criar SQL queries de forma
+progressiva facilmente.
+
+Para começar um builder com um `\CodeIgniter\Database\BaseConnection` começas
+por especificar a tabela que faz parte da query com `BaseConnection::table()`.
+
+A partir de agora tu tens acesso a um `\CodeIgniter\Database\BaseBuilder`
+retornado pelo `BaseConnection::table()`.
+
+## Métodos de `BaseBuilder`
+
+### `BaseBuilder::get()`
+
+Faz um `SELECT` a essa tabela. Podes também especificar dois parâmetros: o
+`LIMIT` e o `OFFSET`. Retorna um `\CodeIgniter\Database\Query`.
+
+### `BaseBuilder::select()`
+
+Define os fields para o `SELECT` definidos como parâmetros.
+
+``` php
+$builder->select('title, content, date');
+$query = $builder->get();
+// Executes: SELECT title, content, date FROM mytable
+```
