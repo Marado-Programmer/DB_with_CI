@@ -174,15 +174,74 @@ configuração do inicio.
 <?php
 
 $db = \Config\Database::connect(); // default DB
+
+// db_connect() does the same as above
 ```
 
 ## Métodos
 
 ### `BaseConnection::query()`
 
-Executa raw SQL e retorna uma `\CodeIgniter\Database\BaseResult` ou uma `\CodeIgniter\Database\Query`
+Executa raw SQL e retorna uma `\CodeIgniter\Database\BaseResult` ou uma
+`\CodeIgniter\Database\Query`
+
+Como segundo parâmetro depois da query pode receber um array com valores para
+fazer binding.
+
+Caso os bindings sejam identificados como `:foo` deves usar um array associativo
+
+### `BaseConnection::simpleQuery()`
+
+Executa raw SQL igual ao método acima, retorna um booleano que representa o
+sucesso da query.
 
 ### `BaseConnection::escape()`
 
 Adiciona quotes ao valor passado. Pode dar jeito já que diferentes DB podem ter
 diferentes formas de fazer escape aos valores
+
+### `BaseConnection::reconnect()`
+### `BaseConnection::close()`
+
+### `BaseConnection::error()`
+
+Retorna uma array com informação do último erro relacionado à conexão à DB
+
+### `BaseConnection::prepare()`
+
+Permite criares uma sequência de queries que possam ser preparadas com
+antecedência e executadas quando quiseres.
+
+Recebem como parâmetro uma função anónima que como parâmetro ele têm a mesma
+instância da `BaseConnection`. A função anónima têm que retornar uma
+`\CodeIgniter\Database\Query`
+
+A função retorna um `\CodeIgniter\Database\PreparedQuery`
+
+``` php
+$pQuery = $db->prepare(static function ($db) {
+    return $db->table('user')->insert([
+        'name'    => 'x',
+        'email'   => 'y',
+        'country' => 'US',
+    ]);
+});
+
+// ... code
+
+$pQuery->execute(...[$query, $params, $go, $on]);
+```
+
+# Class `\CodeIgniter\Database\Query`
+
+## Métodos
+
+### `Query::getResult()`
+
+Retorna um array com os resultados da query com typeof object
+
+### `Query::getRow()`
+
+Retorna uma única row typeof object
+
+### `Query::getFieldNames()`
